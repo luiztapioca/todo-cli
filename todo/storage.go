@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"slices"
 )
 
 func GetTasks() ([]Task, error) {
@@ -30,6 +31,18 @@ func GetTasks() ([]Task, error) {
 	return tasks, nil
 }
 
+func persistTasks(tasks []Task) error {
+	file, err := os.OpenFile("tasks.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	return encoder.Encode(&tasks)
+}
+
 func SaveTask(task Task) (Task, error) {
 	tasks, err := GetTasks()
 
@@ -37,20 +50,31 @@ func SaveTask(task Task) (Task, error) {
 		return task, err
 	}
 
-	tasks = append(tasks, task)
+	index := slices.IndexFunc(tasks, func(t Task) bool {
+		return t.ID == task.ID
+	})
 
-	file, err := os.OpenFile("tasks.json", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if index == -1 {
+		tasks = append(tasks, task)
+	} else {
+		tasks[index] = task
+	}
+
+	return task, persistTasks(tasks)
+}
+
+func DeleteTask(id uint) error {
+	tasks, err := GetTasks()
 
 	if err != nil {
-		return task, err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-
-	if err := encoder.Encode(&tasks); err != nil {
-		return task, err
+		return err
 	}
 
-	return task, nil
+	index := slices.IndexFunc(tasks, func(t Task) bool {
+		return t.ID == id
+	})
+
+	tasks = slices.Delete(tasks, index, index+1)
+
+	return persistTasks(tasks)
 }
