@@ -1,5 +1,7 @@
 package todo
 
+import "fmt"
+
 type Task struct {
 	ID        uint   `json:"id"`
 	Title     string `json:"title"`
@@ -12,4 +14,8 @@ func (t Task) Status() string {
 	} else {
 		return "Not completed"
 	}
+}
+
+func (t Task) String() string {
+	return fmt.Sprintf("%d -- %s [%s]", t.ID, t.Title, t.Status())
 }
