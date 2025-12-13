@@ -2,6 +2,7 @@ package todo
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"slices"
@@ -74,7 +75,10 @@ func DeleteTask(id uint) error {
 		return t.ID == id
 	})
 
-	tasks = slices.Delete(tasks, index, index+1)
+	if index != -1 {
+		tasks = slices.Delete(tasks, index, index+1)
+		return persistTasks(tasks)
+	}
 
-	return persistTasks(tasks)
+	return errors.New("Task not found")
 }
